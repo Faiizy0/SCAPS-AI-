@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   ScatterChart, Scatter, ZAxis, Legend
@@ -99,8 +99,80 @@ const parseScientific = (str: string) => {
   return isNaN(val) ? 0 : val;
 };
 
+const ScientificInput = ({ 
+  value, 
+  onChange, 
+  label, 
+  className = "input-field py-1 text-sm font-mono" 
+}: { 
+  value: number, 
+  onChange: (val: number) => void, 
+  label?: string,
+  className?: string
+}) => {
+  const [localValue, setLocalValue] = useState(formatScientific(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(formatScientific(value));
+    }
+  }, [value, isFocused]);
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    const parsed = parseScientific(localValue);
+    onChange(parsed);
+    setLocalValue(formatScientific(parsed));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  };
+
+  const inputElement = (
+    <input 
+      type="text" 
+      className={className} 
+      value={isFocused ? localValue : formatScientific(value)} 
+      onChange={e => setLocalValue(e.target.value)} 
+      onFocus={() => setIsFocused(true)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    />
+  );
+
+  if (label) {
+    return (
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold text-slate-400">{label}</label>
+        {inputElement}
+      </div>
+    );
+  }
+
+  return inputElement;
+};
+
 export default function App() {
-  const [data, setData] = useState<SolarCellSimulation[]>(INITIAL_DATA);
+  const [data, setData] = useState<SolarCellSimulation[]>(() => {
+    const saved = localStorage.getItem('solar_sim_data');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved data', e);
+      }
+    }
+    return INITIAL_DATA;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('solar_sim_data', JSON.stringify(data));
+  }, [data]);
+
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingSim, setViewingSim] = useState<SolarCellSimulation | null>(null);
@@ -492,68 +564,26 @@ export default function App() {
 
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             { (layer.type !== 'Left Contact' && layer.type !== 'Right Contact') && (
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400">thickness (nm)</label>
-                                <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.thickness || 0)} onChange={e => handleUpdateLayer(layer.id, { thickness: parseScientific(e.target.value) })} />
-                              </div>
+                              <ScientificInput label="thickness (nm)" value={layer.thickness || 0} onChange={val => handleUpdateLayer(layer.id, { thickness: val })} />
                             )}
                             { (layer.type === 'Left Contact' || layer.type === 'Right Contact') ? (
                               <>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">metal work function (eV)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.metalWorkFunction || 0)} onChange={e => handleUpdateLayer(layer.id, { metalWorkFunction: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">e- rec. velocity (s_e, cm/s)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.electronRecVelocity || 0)} onChange={e => handleUpdateLayer(layer.id, { electronRecVelocity: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">h+ rec. velocity (s_h, cm/s)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.holeRecVelocity || 0)} onChange={e => handleUpdateLayer(layer.id, { holeRecVelocity: parseScientific(e.target.value) })} />
-                                </div>
+                                <ScientificInput label="metal work function (eV)" value={layer.metalWorkFunction || 0} onChange={val => handleUpdateLayer(layer.id, { metalWorkFunction: val })} />
+                                <ScientificInput label="e- rec. velocity (s_e, cm/s)" value={layer.electronRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { electronRecVelocity: val })} />
+                                <ScientificInput label="h+ rec. velocity (s_h, cm/s)" value={layer.holeRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { holeRecVelocity: val })} />
                               </>
                             ) : (
                               <>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">bandgap (eV)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.bandgap || 0)} onChange={e => handleUpdateLayer(layer.id, { bandgap: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">affinity (χ, eV)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.electronAffinity || 0)} onChange={e => handleUpdateLayer(layer.id, { electronAffinity: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">dielectric (ε_r)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.dielectricConstant || 0)} onChange={e => handleUpdateLayer(layer.id, { dielectricConstant: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">cb dos (n_c, cm⁻³)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.cbEffectiveDos || 0)} onChange={e => handleUpdateLayer(layer.id, { cbEffectiveDos: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">vb dos (n_v, cm⁻³)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.vbEffectiveDos || 0)} onChange={e => handleUpdateLayer(layer.id, { vbEffectiveDos: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">electron mobility (cm²/Vs)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.electronMobility || 0)} onChange={e => handleUpdateLayer(layer.id, { electronMobility: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">hole mobility (cm²/Vs)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.holeMobility || 0)} onChange={e => handleUpdateLayer(layer.id, { holeMobility: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">donor (n_d, cm⁻³)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.donorDensity || 0)} onChange={e => handleUpdateLayer(layer.id, { donorDensity: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">acceptor (n_a, cm⁻³)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.acceptorDensity || 0)} onChange={e => handleUpdateLayer(layer.id, { acceptorDensity: parseScientific(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400">defect (n_t, cm⁻³)</label>
-                                  <input type="text" className="input-field py-1 text-sm font-mono" value={formatScientific(layer.defectDensity || 0)} onChange={e => handleUpdateLayer(layer.id, { defectDensity: parseScientific(e.target.value) })} />
-                                </div>
+                                <ScientificInput label="bandgap (eV)" value={layer.bandgap || 0} onChange={val => handleUpdateLayer(layer.id, { bandgap: val })} />
+                                <ScientificInput label="affinity (χ, eV)" value={layer.electronAffinity || 0} onChange={val => handleUpdateLayer(layer.id, { electronAffinity: val })} />
+                                <ScientificInput label="dielectric (ε_r)" value={layer.dielectricConstant || 0} onChange={val => handleUpdateLayer(layer.id, { dielectricConstant: val })} />
+                                <ScientificInput label="cb dos (n_c, cm⁻³)" value={layer.cbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { cbEffectiveDos: val })} />
+                                <ScientificInput label="vb dos (n_v, cm⁻³)" value={layer.vbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { vbEffectiveDos: val })} />
+                                <ScientificInput label="electron mobility (cm²/Vs)" value={layer.electronMobility || 0} onChange={val => handleUpdateLayer(layer.id, { electronMobility: val })} />
+                                <ScientificInput label="hole mobility (cm²/Vs)" value={layer.holeMobility || 0} onChange={val => handleUpdateLayer(layer.id, { holeMobility: val })} />
+                                <ScientificInput label="donor (n_d, cm⁻³)" value={layer.donorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { donorDensity: val })} />
+                                <ScientificInput label="acceptor (n_a, cm⁻³)" value={layer.acceptorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { acceptorDensity: val })} />
+                                <ScientificInput label="defect (n_t, cm⁻³)" value={layer.defectDensity || 0} onChange={val => handleUpdateLayer(layer.id, { defectDensity: val })} />
                               </>
                             )}
                           </div>
@@ -597,22 +627,10 @@ export default function App() {
                                   <option value="VB tail">VB tail</option>
                                 </select>
                               </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400">σ_e (cm²)</label>
-                                <input type="text" className="input-field py-1 text-xs font-mono" value={formatScientific(interfaceDefects[idx].captureCrossSectionElectron)} onChange={e => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { captureCrossSectionElectron: parseScientific(e.target.value) })} />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400">σ_h (cm²)</label>
-                                <input type="text" className="input-field py-1 text-xs font-mono" value={formatScientific(interfaceDefects[idx].captureCrossSectionHole)} onChange={e => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { captureCrossSectionHole: parseScientific(e.target.value) })} />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400">energy (eV)</label>
-                                <input type="text" className="input-field py-1 text-xs font-mono" value={formatScientific(interfaceDefects[idx].energyReference)} onChange={e => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { energyReference: parseScientific(e.target.value) })} />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400">density (cm⁻²)</label>
-                                <input type="text" className="input-field py-1 text-xs font-mono" value={formatScientific(interfaceDefects[idx].totalDensity)} onChange={e => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { totalDensity: parseScientific(e.target.value) })} />
-                              </div>
+                              <ScientificInput className="input-field py-1 text-xs font-mono" label="σ_e (cm²)" value={interfaceDefects[idx].captureCrossSectionElectron} onChange={val => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { captureCrossSectionElectron: val })} />
+                              <ScientificInput className="input-field py-1 text-xs font-mono" label="σ_h (cm²)" value={interfaceDefects[idx].captureCrossSectionHole} onChange={val => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { captureCrossSectionHole: val })} />
+                              <ScientificInput className="input-field py-1 text-xs font-mono" label="energy (eV)" value={interfaceDefects[idx].energyReference} onChange={val => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { energyReference: val })} />
+                              <ScientificInput className="input-field py-1 text-xs font-mono" label="density (cm⁻²)" value={interfaceDefects[idx].totalDensity} onChange={val => handleUpdateInterfaceDefect(interfaceDefects[idx].id, { totalDensity: val })} />
                             </div>
                           </div>
                         )}
