@@ -17,7 +17,8 @@ import {
   GripVertical,
   Settings2,
   Search,
-  Eye
+  Eye,
+  Pencil
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
@@ -174,6 +175,7 @@ export default function App() {
   }, [data]);
 
   const [showForm, setShowForm] = useState(false);
+  const [editingSimId, setEditingSimId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingSim, setViewingSim] = useState<SolarCellSimulation | null>(null);
 
@@ -276,20 +278,36 @@ export default function App() {
   const handleAddSimulation = (e: React.FormEvent) => {
     e.preventDefault();
     const newSim: SolarCellSimulation = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: editingSimId || Math.random().toString(36).substr(2, 9),
       name: simName,
       layers: [...layers],
       interfaceDefects: [...interfaceDefects],
       results: { ...results },
       timestamp: Date.now()
     };
-    setData([newSim, ...data]);
+    
+    if (editingSimId) {
+      setData(data.map(d => d.id === editingSimId ? newSim : d));
+    } else {
+      setData([newSim, ...data]);
+    }
+    
     setShowForm(false);
+    setEditingSimId(null);
     // Reset form
     setSimName('New Simulation');
     setLayers(INITIAL_LAYERS);
     setInterfaceDefects(INITIAL_INTERFACE_DEFECTS);
     setResults({ voc: 0, jsc: 0, ff: 0, pce: 0 });
+  };
+
+  const handleEditSim = (sim: SolarCellSimulation) => {
+    setSimName(sim.name);
+    setLayers([...sim.layers]);
+    setInterfaceDefects([...sim.interfaceDefects]);
+    setResults({ ...sim.results });
+    setEditingSimId(sim.id);
+    setShowForm(true);
   };
 
   const handleDeleteSim = (id: string) => {
@@ -322,7 +340,14 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                setEditingSimId(null);
+                setSimName('New Simulation');
+                setLayers(INITIAL_LAYERS);
+                setInterfaceDefects(INITIAL_INTERFACE_DEFECTS);
+                setResults({ voc: 0, jsc: 0, ff: 0, pce: 0 });
+                setShowForm(true);
+              }}
               className="btn-primary flex items-center gap-2"
             >
               <Plus size={18} />
@@ -401,6 +426,13 @@ export default function App() {
                               title="View Details"
                             >
                               <Eye size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleEditSim(sim)}
+                              className="p-2 text-slate-300 hover:text-blue-500 transition-colors"
+                              title="Edit Simulation"
+                            >
+                              <Pencil size={18} />
                             </button>
                             <button 
                               onClick={() => handleDeleteSim(sim.id)}
@@ -490,8 +522,8 @@ export default function App() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-xl font-bold">New thin - Solar cell simulation</h2>
-                <button onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <h2 className="text-xl font-bold">{editingSimId ? 'Edit Simulation' : 'New thin - Solar cell simulation'}</h2>
+                <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <Trash2 size={20} className="text-slate-400" />
                 </button>
               </div>
@@ -674,8 +706,10 @@ export default function App() {
               </div>
 
               <div className="p-6 border-t border-slate-100 flex gap-3">
-                <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={handleAddSimulation} className="btn-primary flex-1">Save Simulation</button>
+                <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="btn-secondary flex-1">Cancel</button>
+                <button onClick={handleAddSimulation} className="btn-primary flex-1">
+                  {editingSimId ? 'Update Simulation' : 'Save Simulation'}
+                </button>
               </div>
             </motion.div>
           </div>
