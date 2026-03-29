@@ -1,0 +1,5 @@
+{
+  "name": "Remix: Perovskite Solar Cell Research AI",
+  "description": "An AI-powered research tool for analyzing perovskite solar cell parameters and SCAPS simulation results.",
+  "requestFramePermissions": []
+}
