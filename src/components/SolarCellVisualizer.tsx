@@ -54,7 +54,7 @@ export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers
           </g>
         </g>
         
-        <text x="180" y="30" className="text-[10px] font-bold fill-slate-500 italic">AM1.5G spectrum</text>
+        <text x="180" y="30" className="text-[10px] font-bold fill-slate-500 dark:fill-slate-400 italic">AM1.5G spectrum</text>
         
         {/* Light Waves */}
         <g transform="translate(150, 40)" className="opacity-60">
@@ -127,16 +127,16 @@ export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers
                 <rect x="0" y="-15" width="40" height="15" fill="#E2E8F0" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 40 -15 L 60 -35 L 60 -20 L 40 0 Z" fill="#CBD5E1" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 0 -15 L 20 -35 L 60 -35 L 40 -15 Z" fill="#F1F5F9" stroke="rgba(0,0,0,0.1)" />
-                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600">{leftContact.material}</text>
+                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{leftContact.material}</text>
               </g>
               {/* Right Block */}
               <g transform={`translate(${width - perspectiveX - 40}, 0)`}>
                 <rect x="0" y="-15" width="40" height="15" fill="#E2E8F0" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 40 -15 L 60 -35 L 60 -20 L 40 0 Z" fill="#CBD5E1" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 0 -15 L 20 -35 L 60 -35 L 40 -15 Z" fill="#F1F5F9" stroke="rgba(0,0,0,0.1)" />
-                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600">{leftContact.material}</text>
+                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{leftContact.material}</text>
               </g>
-              <text x={width - 20} y={-perspectiveY} className="text-[8px] font-bold fill-slate-500">Front contact</text>
+              <text x={width - 20} y={-perspectiveY} className="text-[8px] font-bold fill-slate-500 dark:fill-slate-400">Front contact</text>
             </g>
           )}
 
@@ -146,7 +146,7 @@ export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers
               <rect x="0" y="0" width={width - perspectiveX} height="10" fill="#475569" stroke="rgba(0,0,0,0.1)" />
               <path d={`M ${width - perspectiveX} 0 L ${width} ${-perspectiveY} L ${width} ${10 - perspectiveY} L ${width - perspectiveX} 10 Z`} fill="#334155" stroke="rgba(0,0,0,0.1)" />
               <text x={(width - perspectiveX) / 2} y="8" textAnchor="middle" className="text-[8px] font-bold fill-white/80">{rightContact.material}</text>
-              <text x={width - 20} y={10 - perspectiveY} className="text-[8px] font-bold fill-slate-500">Back contact</text>
+              <text x={width - 20} y={10 - perspectiveY} className="text-[8px] font-bold fill-slate-500 dark:fill-slate-400">Back contact</text>
             </g>
           )}
 

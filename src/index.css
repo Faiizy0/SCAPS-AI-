@@ -1,28 +1,44 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-bg: #f8fafc;
-  --color-ink: #0f172a;
-  --color-accent: #3b82f6;
-  --color-border: #e2e8f0;
+  --color-bg: var(--color-bg-var);
+  --color-ink: var(--color-ink-var);
+  --color-accent: var(--color-accent-var);
+  --color-border: var(--color-border-var);
 }
 
 @layer base {
+  :root {
+    --color-bg-var: #f8fafc;
+    --color-ink-var: #0f172a;
+    --color-accent-var: #3b82f6;
+    --color-border-var: #e2e8f0;
+  }
+  
+  .dark {
+    --color-bg-var: #0f172a;
+    --color-ink-var: #f8fafc;
+    --color-accent-var: #3b82f6;
+    --color-border-var: #1e293b;
+  }
+
   body {
-    @apply bg-bg text-ink font-sans antialiased;
+    @apply bg-bg text-ink font-sans antialiased transition-colors duration-200;
   }
 }
 
 .glass-card {
-  @apply bg-white border border-border rounded-xl shadow-sm overflow-hidden;
+  @apply bg-white dark:bg-slate-800 border border-border rounded-xl shadow-sm overflow-hidden transition-colors duration-200;
 }
 
 .input-field {
-  @apply w-full px-3 py-2 bg-slate-50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all;
+  @apply w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-ink;
 }
 
 .btn-primary {
@@ -30,6 +46,6 @@
 }
 
 .btn-secondary {
-  @apply px-4 py-2 bg-white border border-border text-ink rounded-lg font-medium hover:bg-slate-50 active:scale-95 transition-all;
+  @apply px-4 py-2 bg-white dark:bg-slate-800 border border-border text-ink rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all;
 }
 
