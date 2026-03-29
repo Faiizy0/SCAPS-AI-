@@ -7,7 +7,6 @@ import {
   FlaskConical, 
   Plus, 
   Trash2, 
-  BrainCircuit, 
   Download, 
   Upload, 
   ChevronRight,
@@ -21,8 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SolarCellSimulation, AnalysisResult, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
-import { analyzeSolarCellData } from './services/geminiService';
+import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
 import { SolarCellVisualizer } from './components/SolarCellVisualizer';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -103,8 +101,6 @@ const parseScientific = (str: string) => {
 
 export default function App() {
   const [data, setData] = useState<SolarCellSimulation[]>(INITIAL_DATA);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingSim, setViewingSim] = useState<SolarCellSimulation | null>(null);
@@ -228,19 +224,6 @@ export default function App() {
     setData(data.filter(d => d.id !== id));
   };
 
-  const handleAnalyze = async () => {
-    if (data.length === 0) return;
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeSolarCellData(data);
-      setAnalysis(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return data;
     const query = searchQuery.toLowerCase();
@@ -277,10 +260,10 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         
-        {/* Left Column */}
-        <div className="lg:col-span-8 space-y-8">
+        {/* Main Content */}
+        <div className="space-y-8">
           
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -425,58 +408,6 @@ export default function App() {
               )}
             </div>
           </section>
-        </div>
-
-        {/* Right Column: AI Analysis */}
-        <div className="lg:col-span-4 space-y-6">
-          <section className="glass-card bg-slate-900 text-white p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <BrainCircuit size={120} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <BrainCircuit size={18} />
-                </div>
-                <h2 className="font-bold text-lg">Stack Analyzer</h2>
-              </div>
-              <p className="text-slate-400 text-sm mb-6">
-                Evaluate your multi-layer stacks to optimize interface charge transport and absorber efficiency.
-              </p>
-              <button 
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || data.length === 0}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <BrainCircuit size={18} />
-                )}
-                <span>{isAnalyzing ? 'Analyzing Stack...' : 'Run AI Analysis'}</span>
-              </button>
-            </div>
-          </section>
-
-          {analysis && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="glass-card p-6">
-                <h3 className="text-xs font-bold text-slate-500 mb-3">summary</h3>
-                <p className="text-sm text-slate-700 leading-relaxed">{analysis.summary}</p>
-              </div>
-              <div className="glass-card p-6">
-                <h3 className="text-xs font-bold text-slate-500 mb-3">recommendations</h3>
-                <ul className="space-y-2">
-                  {analysis.recommendations.map((rec, i) => (
-                    <li key={i} className="text-sm text-slate-700 flex gap-2">
-                      <span className="text-blue-500 font-bold">•</span>
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          )}
         </div>
       </main>
 

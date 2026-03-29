@@ -48,9 +48,3 @@ export interface SolarCellSimulation {
   };
   timestamp: number;
 }
-
-export interface AnalysisResult {
-  summary: string;
-  recommendations: string[];
-  trends: string;
-}
