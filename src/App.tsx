@@ -335,7 +335,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">Perovskite AI Research</h1>
-              <p className="text-xs text-slate-500 font-mono tracking-wider">SCAPS Simulation data</p>
+              <p className="text-xs text-slate-500 font-mono tracking-wider">SCAPS Simulation data - Author: Vi</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
