@@ -180,7 +180,7 @@ export default function App() {
   useEffect(() => {
     if (!userId) return;
 
-    const q = query(collection(db, 'simulations'), where('userId', '==', userId));
+    const q = query(collection(db, 'simulations'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const simulations: SolarCellSimulation[] = [];
       snapshot.forEach((doc) => {
