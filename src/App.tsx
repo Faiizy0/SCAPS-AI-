@@ -18,9 +18,7 @@ import {
   Settings2,
   Search,
   Eye,
-  Pencil,
-  Sun,
-  Moon
+  Pencil
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
@@ -28,6 +26,9 @@ import { SolarCellVisualizer } from './components/SolarCellVisualizer';
 import { AIAssistant } from './components/AIAssistant';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { db, auth } from './firebase';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -151,7 +152,7 @@ const ScientificInput = ({
   if (label) {
     return (
       <div className="space-y-1">
-        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{label}</label>
+        <label className="text-[10px] font-bold text-slate-400 dark:text-ink">{label}</label>
         {inputElement}
       </div>
     );
@@ -161,37 +162,35 @@ const ScientificInput = ({
 };
 
 export default function App() {
-  const [data, setData] = useState<SolarCellSimulation[]>(() => {
-    const saved = localStorage.getItem('solar_sim_data');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved data', e);
+  const [data, setData] = useState<SolarCellSimulation[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        signInAnonymously(auth);
       }
-    }
-    return INITIAL_DATA;
-  });
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('solar_sim_data', JSON.stringify(data));
-  }, [data]);
+    if (!userId) return;
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+    const q = query(collection(db, 'simulations'), where('userId', '==', userId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const simulations: SolarCellSimulation[] = [];
+      snapshot.forEach((doc) => {
+        simulations.push({ id: doc.id, ...doc.data() } as SolarCellSimulation);
+      });
+      setData(simulations);
+    });
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.body.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
+    return () => unsubscribe();
+  }, [userId]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingSimId, setEditingSimId] = useState<string | null>(null);
@@ -294,21 +293,23 @@ export default function App() {
     setInterfaceDefects(interfaceDefects.map(d => d.id === id ? { ...d, ...updates } : d));
   };
 
-  const handleAddSimulation = (e: React.FormEvent) => {
+  const handleAddSimulation = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSim: SolarCellSimulation = {
-      id: editingSimId || Math.random().toString(36).substr(2, 9),
+    if (!userId) return;
+
+    const simData = {
       name: simName,
       layers: [...layers],
       interfaceDefects: [...interfaceDefects],
       results: { ...results },
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      userId: userId
     };
     
     if (editingSimId) {
-      setData(data.map(d => d.id === editingSimId ? newSim : d));
+      await updateDoc(doc(db, 'simulations', editingSimId), simData);
     } else {
-      setData([newSim, ...data]);
+      await addDoc(collection(db, 'simulations'), simData);
     }
     
     setShowForm(false);
@@ -329,8 +330,8 @@ export default function App() {
     setShowForm(true);
   };
 
-  const handleDeleteSim = (id: string) => {
-    setData(data.filter(d => d.id !== id));
+  const handleDeleteSim = async (id: string) => {
+    await deleteDoc(doc(db, 'simulations', id));
   };
 
   const filteredData = useMemo(() => {
@@ -353,18 +354,11 @@ export default function App() {
               <FlaskConical size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight dark:text-white">Perovskite AI Research</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono tracking-wider">SCAPS Simulation data - Author: Vi</p>
+              <h1 className="font-bold text-lg leading-tight dark:text-ink">Perovskite AI Research</h1>
+              <p className="text-xs text-slate-500 dark:text-ink font-mono tracking-wider">SCAPS Simulation data - Author: Vi</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              title="Toggle theme"
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <button 
               onClick={() => {
                 setEditingSimId(null);
@@ -398,8 +392,8 @@ export default function App() {
                   <stat.icon size={20} />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{stat.label}</p>
-                  <p className="text-xl font-bold dark:text-white">{stat.value}</p>
+                  <p className="text-xs text-slate-500 dark:text-ink font-medium">{stat.label}</p>
+                  <p className="text-xl font-bold dark:text-ink">{stat.value}</p>
                 </div>
               </div>
             ))}
@@ -408,7 +402,7 @@ export default function App() {
           {/* Simulation List */}
           <section className="space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
-              <h2 className="font-bold text-lg flex items-center gap-2 dark:text-white">
+              <h2 className="font-bold text-lg flex items-center gap-2 dark:text-ink">
                 <Activity size={20} className="text-blue-600" />
                 Simulation History
               </h2>
@@ -417,7 +411,7 @@ export default function App() {
                 <input 
                   type="text"
                   placeholder="Search by material (e.g. MAPbI3, TiO2)..."
-                  className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                  className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-ink"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -440,29 +434,29 @@ export default function App() {
                       </div>
                       <div className="flex-1 space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-lg dark:text-white">{sim.name}</h3>
+                          <h3 className="font-bold text-lg dark:text-ink">{sim.name}</h3>
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col items-end">
-                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">PCE (%)</span>
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-ink">PCE (%)</span>
                               <span className="text-xl font-black text-blue-600 dark:text-blue-400">{sim.results.pce.toFixed(2)}%</span>
                             </div>
                             <button 
                               onClick={() => setViewingSim(sim)}
-                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-slate-500 dark:hover:text-blue-400 transition-colors"
+                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-ink dark:hover:text-blue-400 transition-colors"
                               title="View Details"
                             >
                               <Eye size={18} />
                             </button>
                             <button 
                               onClick={() => handleEditSim(sim)}
-                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-slate-500 dark:hover:text-blue-400 transition-colors"
+                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-ink dark:hover:text-blue-400 transition-colors"
                               title="Edit Simulation"
                             >
                               <Pencil size={18} />
                             </button>
                             <button 
                               onClick={() => handleDeleteSim(sim.id)}
-                              className="p-2 text-slate-300 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
+                              className="p-2 text-slate-300 hover:text-red-500 dark:text-ink dark:hover:text-red-400 transition-colors"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -471,7 +465,7 @@ export default function App() {
 
                         {/* Layer Stack Visualization */}
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1">layer stack</span>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-ink mb-1">layer stack</span>
                           <div className="flex h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                             {sim.layers.map((layer, idx) => (
                               <React.Fragment key={layer.id}>
@@ -508,16 +502,16 @@ export default function App() {
 
                         <div className="grid grid-cols-3 gap-4 pt-2">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Voc (V)</label>
-                              <p className="font-mono font-bold dark:text-white">{sim.results.voc.toFixed(3)} V</p>
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Voc (V)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.voc.toFixed(3)} V</p>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Jsc (mA/cm²)</label>
-                              <p className="font-mono font-bold dark:text-white">{sim.results.jsc.toFixed(2)} mA/cm²</p>
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Jsc (mA/cm²)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.jsc.toFixed(2)} mA/cm²</p>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">FF (%)</label>
-                              <p className="font-mono font-bold dark:text-white">{sim.results.ff.toFixed(2)}%</p>
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">FF (%)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.ff.toFixed(2)}%</p>
                             </div>
                         </div>
                       </div>
@@ -525,9 +519,9 @@ export default function App() {
                   </motion.div>
                 ))
               ) : (
-                <div className="glass-card p-12 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 space-y-4">
+                <div className="glass-card p-12 flex flex-col items-center justify-center text-slate-400 dark:text-ink space-y-4">
                   <Search size={48} className="opacity-20" />
-                  <p className="font-medium dark:text-slate-400">No simulations found matching your search.</p>
+                  <p className="font-medium dark:text-ink">No simulations found matching your search.</p>
                   <button 
                     onClick={() => setSearchQuery('')}
                     className="text-blue-600 hover:underline text-sm font-bold"
@@ -548,7 +542,7 @@ export default function App() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                <h2 className="text-xl font-bold dark:text-white">{editingSimId ? 'Edit Simulation' : 'New thin - Solar cell simulation'}</h2>
+                <h2 className="text-xl font-bold dark:text-ink">{editingSimId ? 'Edit Simulation' : 'New thin - Solar cell simulation'}</h2>
                 <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                   <Trash2 size={20} className="text-slate-400" />
                 </button>
@@ -565,7 +559,7 @@ export default function App() {
 
                 {/* Basic Info */}
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">simulation name</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-ink">simulation name</label>
                   <input 
                     type="text" 
                     className="input-field text-lg font-bold" 
@@ -577,7 +571,7 @@ export default function App() {
                 {/* Layer Editor */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400">layer stack (top to bottom)</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-ink">layer stack (top to bottom)</label>
                     <button onClick={() => handleAddLayer()} className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
                       <Plus size={14} /> add layer
                     </button>
@@ -598,7 +592,7 @@ export default function App() {
                         <div className="p-6 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 space-y-4 relative">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                              <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 dark:text-ink">
                                 {idx + 1}
                               </div>
                               <select 
@@ -615,7 +609,7 @@ export default function App() {
                                 onChange={e => handleUpdateLayer(layer.id, { material: e.target.value })}
                               />
                             </div>
-                            <button onClick={() => handleRemoveLayer(layer.id)} className="p-2 text-slate-300 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400">
+                            <button onClick={() => handleRemoveLayer(layer.id)} className="p-2 text-slate-300 hover:text-red-500 dark:text-ink dark:hover:text-red-400">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -660,7 +654,7 @@ export default function App() {
                             
                             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                               <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">defect type</label>
+                                <label className="text-[10px] font-bold text-slate-400 dark:text-ink">defect type</label>
                                 <select 
                                   className="input-field py-1 text-xs font-bold"
                                   value={interfaceDefects[idx].type}
@@ -672,7 +666,7 @@ export default function App() {
                                 </select>
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">distribution</label>
+                                <label className="text-[10px] font-bold text-slate-400 dark:text-ink">distribution</label>
                                 <select 
                                   className="input-field py-1 text-xs font-bold"
                                   value={interfaceDefects[idx].distribution}
@@ -709,22 +703,22 @@ export default function App() {
 
                 {/* Results Editor */}
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">simulation results (scaps output)</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-ink">simulation results (scaps output)</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Voc (V)</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Voc (V)</label>
                       <input type="number" step="0.001" className="input-field" value={results.voc} onChange={e => setResults({...results, voc: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Jsc (mA/cm²)</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Jsc (mA/cm²)</label>
                       <input type="number" step="0.1" className="input-field" value={results.jsc} onChange={e => setResults({...results, jsc: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">FF (%)</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-ink">FF (%)</label>
                       <input type="number" step="0.1" className="input-field" value={results.ff} onChange={e => setResults({...results, ff: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500">PCE (%)</label>
+                      <label className="text-[10px] font-bold text-slate-400 dark:text-ink">PCE (%)</label>
                       <input type="number" step="0.01" className="input-field bg-blue-50 dark:bg-blue-900/20 font-bold text-blue-600 dark:text-blue-400" value={results.pce} onChange={e => setResults({...results, pce: Number(e.target.value)})} />
                     </div>
                   </div>
@@ -761,8 +755,8 @@ export default function App() {
             >
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                 <div>
-                  <h2 className="text-xl font-bold dark:text-white">{viewingSim.name}</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">Simulation ID: {viewingSim.id}</p>
+                  <h2 className="text-xl font-bold dark:text-ink">{viewingSim.name}</h2>
+                  <p className="text-xs text-slate-500 dark:text-ink font-mono">Simulation ID: {viewingSim.id}</p>
                 </div>
                 <button onClick={() => setViewingSim(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                   <Trash2 size={20} className="text-slate-400 rotate-45" />
@@ -780,22 +774,22 @@ export default function App() {
                     </div>
 
                     <div className="glass-card p-6 space-y-4">
-                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-white">
+                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
                         <Zap size={16} className="text-amber-500" />
                         Performance Metrics
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Voc</p>
-                          <p className="text-lg font-bold dark:text-white">{viewingSim.results.voc.toFixed(3)} V</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Voc</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.voc.toFixed(3)} V</p>
                         </div>
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Jsc</p>
-                          <p className="text-lg font-bold dark:text-white">{viewingSim.results.jsc.toFixed(2)} mA/cm²</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Jsc</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.jsc.toFixed(2)} mA/cm²</p>
                         </div>
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Fill Factor</p>
-                          <p className="text-lg font-bold dark:text-white">{viewingSim.results.ff.toFixed(2)}%</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Fill Factor</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.ff.toFixed(2)}%</p>
                         </div>
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
                           <p className="text-[10px] font-bold text-blue-400 uppercase">Efficiency (PCE)</p>
@@ -806,7 +800,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-6">
-                    <h3 className="text-sm font-bold flex items-center gap-2 dark:text-white">
+                    <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
                       <Layers size={16} className="text-blue-500" />
                       Layer Details
                     </h3>
@@ -815,14 +809,14 @@ export default function App() {
                         <div key={layer.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-slate-400">{idx + 1}</span>
-                              <span className="font-bold text-sm dark:text-white">{layer.material}</span>
+                              <span className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-ink">{idx + 1}</span>
+                              <span className="font-bold text-sm dark:text-ink">{layer.material}</span>
                               <span className={cn(
                                 "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
                                 layer.type === 'Absorber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 
                                 layer.type === 'ETL' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                                 layer.type === 'HTL' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-ink'
                               )}>
                                 {layer.type}
                               </span>
@@ -832,86 +826,86 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
                             {layer.thickness !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Thickness</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.thickness} nm</span>
+                                <span className="text-slate-400 dark:text-ink">Thickness</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.thickness} nm</span>
                               </div>
                             )}
                             {layer.bandgap !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Bandgap</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.bandgap} eV</span>
+                                <span className="text-slate-400 dark:text-ink">Bandgap</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.bandgap} eV</span>
                               </div>
                             )}
                             {layer.electronAffinity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Affinity (χ)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.electronAffinity} eV</span>
+                                <span className="text-slate-400 dark:text-ink">Affinity (χ)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronAffinity} eV</span>
                               </div>
                             )}
                             {layer.dielectricConstant !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Dielectric (ε_r)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.dielectricConstant}</span>
+                                <span className="text-slate-400 dark:text-ink">Dielectric (ε_r)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.dielectricConstant}</span>
                               </div>
                             )}
                             {layer.cbEffectiveDos !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">CB DOS (N_c)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.cbEffectiveDos)} cm⁻³</span>
+                                <span className="text-slate-400 dark:text-ink">CB DOS (N_c)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.cbEffectiveDos)} cm⁻³</span>
                               </div>
                             )}
                             {layer.vbEffectiveDos !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">VB DOS (N_v)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.vbEffectiveDos)} cm⁻³</span>
+                                <span className="text-slate-400 dark:text-ink">VB DOS (N_v)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.vbEffectiveDos)} cm⁻³</span>
                               </div>
                             )}
                             {layer.electronMobility !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">μ_e</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.electronMobility} cm²/Vs</span>
+                                <span className="text-slate-400 dark:text-ink">μ_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronMobility} cm²/Vs</span>
                               </div>
                             )}
                             {layer.holeMobility !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">μ_h</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.holeMobility} cm²/Vs</span>
+                                <span className="text-slate-400 dark:text-ink">μ_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.holeMobility} cm²/Vs</span>
                               </div>
                             )}
                             {layer.donorDensity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Donor (N_d)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.donorDensity)} cm⁻³</span>
+                                <span className="text-slate-400 dark:text-ink">Donor (N_d)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.donorDensity)} cm⁻³</span>
                               </div>
                             )}
                             {layer.acceptorDensity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Acceptor (N_a)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.acceptorDensity)} cm⁻³</span>
+                                <span className="text-slate-400 dark:text-ink">Acceptor (N_a)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.acceptorDensity)} cm⁻³</span>
                               </div>
                             )}
                             {layer.defectDensity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Defect (N_t)</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.defectDensity)} cm⁻³</span>
+                                <span className="text-slate-400 dark:text-ink">Defect (N_t)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.defectDensity)} cm⁻³</span>
                               </div>
                             )}
                             {layer.metalWorkFunction !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">Work Function</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{layer.metalWorkFunction} eV</span>
+                                <span className="text-slate-400 dark:text-ink">Work Function</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.metalWorkFunction} eV</span>
                               </div>
                             )}
                             {layer.electronRecVelocity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">S_e</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.electronRecVelocity)} cm/s</span>
+                                <span className="text-slate-400 dark:text-ink">S_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.electronRecVelocity)} cm/s</span>
                               </div>
                             )}
                             {layer.holeRecVelocity !== undefined && (
                               <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
-                                <span className="text-slate-400 dark:text-slate-500">S_h</span>
-                                <span className="font-mono font-bold dark:text-slate-300">{formatScientific(layer.holeRecVelocity)} cm/s</span>
+                                <span className="text-slate-400 dark:text-ink">S_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.holeRecVelocity)} cm/s</span>
                               </div>
                             )}
                           </div>
@@ -921,33 +915,33 @@ export default function App() {
                            viewingSim.layers[idx].type !== 'Left Contact' && viewingSim.layers[idx].type !== 'Right Contact' &&
                            viewingSim.layers[idx+1].type !== 'Left Contact' && viewingSim.layers[idx+1].type !== 'Right Contact' && (
                             <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/10 border-l-2 border-amber-400 rounded-lg text-[10px]">
-                              <p className="font-bold text-amber-700 dark:text-amber-500 mb-2 flex items-center gap-1 uppercase tracking-wider">
+                              <p className="font-bold text-amber-700 dark:text-ink mb-2 flex items-center gap-1 uppercase tracking-wider">
                                 <Zap size={10} /> Interface Defect (Layer {idx+1} / {idx+2})
                               </p>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">Type</span>
-                                  <span className="font-bold dark:text-amber-100">{viewingSim.interfaceDefects[idx].type}</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].type}</span>
                                 </div>
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">Density</span>
-                                  <span className="font-bold dark:text-amber-100">{formatScientific(viewingSim.interfaceDefects[idx].totalDensity)} cm⁻²</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].totalDensity)} cm⁻²</span>
                                 </div>
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">Distribution</span>
-                                  <span className="font-bold dark:text-amber-100">{viewingSim.interfaceDefects[idx].distribution}</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].distribution}</span>
                                 </div>
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">Energy Ref</span>
-                                  <span className="font-bold dark:text-amber-100">{viewingSim.interfaceDefects[idx].energyReference} eV</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].energyReference} eV</span>
                                 </div>
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">σ_e</span>
-                                  <span className="font-bold dark:text-amber-100">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionElectron)} cm²</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionElectron)} cm²</span>
                                 </div>
                                 <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
                                   <span className="text-amber-600/70 dark:text-amber-500/70">σ_h</span>
-                                  <span className="font-bold dark:text-amber-100">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionHole)} cm²</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionHole)} cm²</span>
                                 </div>
                               </div>
                             </div>

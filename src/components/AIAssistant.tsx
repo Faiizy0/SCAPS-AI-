@@ -133,12 +133,12 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
                   <div className={`max-w-[80%] p-3 rounded-2xl ${
                     msg.role === 'user' 
                       ? 'bg-blue-600 text-white rounded-tr-sm' 
-                      : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-sm'
+                      : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-ink rounded-tl-sm'
                   }`}>
                     {msg.role === 'user' ? (
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     ) : (
-                      <div className="text-sm prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 prose-pre:text-slate-800 dark:prose-pre:text-slate-200">
+                      <div className="text-sm prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 prose-pre:text-slate-800 dark:prose-pre:text-slate-200 dark:text-ink">
                         <Markdown>{msg.content}</Markdown>
                       </div>
                     )}
@@ -152,7 +152,7 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
                   </div>
                   <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4 rounded-2xl rounded-tl-sm flex items-center gap-2">
                     <Loader2 size={16} className="animate-spin text-slate-400" />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Thinking...</span>
+                    <span className="text-xs text-slate-500 dark:text-ink">Thinking...</span>
                   </div>
                 </div>
               )}

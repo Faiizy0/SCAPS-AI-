@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "Simulation": {
+      "title": "Simulation",
+      "description": "A solar cell simulation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "layers": { "type": "array" },
+        "interfaceDefects": { "type": "array" },
+        "results": { "type": "object" },
+        "timestamp": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "name", "layers", "results", "timestamp", "userId"]
+    }
+  },
+  "firestore": {
+    "/simulations/{simulationId}": {
+      "schema": { "$ref": "Simulation" },
+      "description": "Collection of user simulations"
+    }
+  }
+}
