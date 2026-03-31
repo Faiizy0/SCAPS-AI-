@@ -37,14 +37,14 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const LAYER_TYPES: LayerType[] = [
-  'Left Contact',
+  'Right Contact',
   'Window',
   'Buffer',
   'ETL',
   'Interconnection', // Optional
   'Absorber',
   'HTL', // Optional
-  'Right Contact'
+  'Left Contact'
 ];
 
 const createDefaultInterfaceDefect = (): InterfaceDefect => ({
@@ -59,7 +59,7 @@ const createDefaultInterfaceDefect = (): InterfaceDefect => ({
 
 const INITIAL_LAYERS: Layer[] = [
   { 
-    id: 'l1', type: 'Left Contact', material: 'Al',
+    id: 'l1', type: 'Right Contact', material: 'Al',
     metalWorkFunction: 4.2, electronRecVelocity: 1e7, holeRecVelocity: 1e7
   },
   { 
@@ -78,7 +78,7 @@ const INITIAL_LAYERS: Layer[] = [
     electronMobility: 20, holeMobility: 10, donorDensity: 1e15, acceptorDensity: 0, defectDensity: 1e14 
   },
   { 
-    id: 'l5', type: 'Right Contact', material: 'Ni',
+    id: 'l5', type: 'Left Contact', material: 'Ni',
     metalWorkFunction: 5.1, electronRecVelocity: 1e7, holeRecVelocity: 1e7
   },
 ];

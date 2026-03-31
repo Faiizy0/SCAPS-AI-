@@ -23,8 +23,10 @@ const getLayerColor = (type: string): string => {
 export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers, className }) => {
   // Filter out contacts for the main stack drawing, handle them separately
   const mainLayers = layers.filter(l => l.type !== 'Left Contact' && l.type !== 'Right Contact');
-  const leftContact = layers.find(l => l.type === 'Left Contact');
-  const rightContact = layers.find(l => l.type === 'Right Contact');
+  
+  // Find contacts based on their position in the array (first = front, last = back)
+  const frontContact = layers.length > 0 && (layers[0].type === 'Left Contact' || layers[0].type === 'Right Contact') ? layers[0] : undefined;
+  const backContact = layers.length > 1 && (layers[layers.length - 1].type === 'Left Contact' || layers[layers.length - 1].type === 'Right Contact') ? layers[layers.length - 1] : undefined;
 
   const width = 300;
   const height = 300;
@@ -34,7 +36,7 @@ export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers
   const layerHeight = 30;
   const totalStackHeight = mainLayers.length * layerHeight;
   const startY = 100;
-  const svgHeight = startY + totalStackHeight + (rightContact ? 10 : 0) + 60;
+  const svgHeight = startY + totalStackHeight + (backContact ? 10 : 0) + 60;
 
   return (
     <div className={className}>
@@ -120,38 +122,38 @@ export const SolarCellVisualizer: React.FC<SolarCellVisualizerProps> = ({ layers
           })}
 
           {/* Front Contacts (Top) */}
-          {leftContact && (
+          {frontContact && (
             <g transform={`translate(0, 0)`}>
               {/* Left Block */}
               <g>
                 <rect x="0" y="-15" width="40" height="15" fill="#E2E8F0" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 40 -15 L 60 -35 L 60 -20 L 40 0 Z" fill="#CBD5E1" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 0 -15 L 20 -35 L 60 -35 L 40 -15 Z" fill="#F1F5F9" stroke="rgba(0,0,0,0.1)" />
-                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{leftContact.material}</text>
+                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{frontContact.material}</text>
               </g>
               {/* Right Block */}
               <g transform={`translate(${width - perspectiveX - 40}, 0)`}>
                 <rect x="0" y="-15" width="40" height="15" fill="#E2E8F0" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 40 -15 L 60 -35 L 60 -20 L 40 0 Z" fill="#CBD5E1" stroke="rgba(0,0,0,0.1)" />
                 <path d="M 0 -15 L 20 -35 L 60 -35 L 40 -15 Z" fill="#F1F5F9" stroke="rgba(0,0,0,0.1)" />
-                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{leftContact.material}</text>
+                <text x="20" y="-5" textAnchor="middle" className="text-[8px] font-bold fill-slate-600 dark:fill-slate-400">{frontContact.material}</text>
               </g>
               <text x={width - 20} y={-perspectiveY} className="text-[8px] font-bold fill-slate-500 dark:fill-slate-400">Front contact</text>
             </g>
           )}
 
           {/* Back Contact (Bottom) */}
-          {rightContact && (
+          {backContact && (
             <g transform={`translate(0, ${totalStackHeight})`}>
               <rect x="0" y="0" width={width - perspectiveX} height="10" fill="#475569" stroke="rgba(0,0,0,0.1)" />
               <path d={`M ${width - perspectiveX} 0 L ${width} ${-perspectiveY} L ${width} ${10 - perspectiveY} L ${width - perspectiveX} 10 Z`} fill="#334155" stroke="rgba(0,0,0,0.1)" />
-              <text x={(width - perspectiveX) / 2} y="8" textAnchor="middle" className="text-[8px] font-bold fill-white/80">{rightContact.material}</text>
+              <text x={(width - perspectiveX) / 2} y="8" textAnchor="middle" className="text-[8px] font-bold fill-white/80">{backContact.material}</text>
               <text x={width - 20} y={10 - perspectiveY} className="text-[8px] font-bold fill-slate-500 dark:fill-slate-400">Back contact</text>
             </g>
           )}
 
           {/* Substrate Base */}
-          <g transform={`translate(0, ${totalStackHeight + (rightContact ? 10 : 0)})`}>
+          <g transform={`translate(0, ${totalStackHeight + (backContact ? 10 : 0)})`}>
             <rect x="0" y="0" width={width - perspectiveX} height="30" fill="#0284C7" stroke="rgba(0,0,0,0.1)" />
             <path d={`M ${width - perspectiveX} 0 L ${width} ${-perspectiveY} L ${width} ${30 - perspectiveY} L ${width - perspectiveX} 30 Z`} fill="#0369A1" stroke="rgba(0,0,0,0.1)" />
             <text x={(width - perspectiveX) / 2} y="20" textAnchor="middle" className="text-[12px] font-bold fill-white">Substrate</text>
