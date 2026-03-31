@@ -30,6 +30,8 @@ import { db, auth } from './firebase';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
+import { AIModelAnalysis } from './components/AIModelAnalysis';
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -398,9 +400,11 @@ export default function App() {
               </div>
             ))}
           </div>
+          
+          <AIModelAnalysis simulations={data} />
 
           {/* Simulation List */}
-          <section className="space-y-4">
+          <section className="space-y-4 mt-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
               <h2 className="font-bold text-lg flex items-center gap-2 dark:text-ink">
                 <Activity size={20} className="text-blue-600" />
