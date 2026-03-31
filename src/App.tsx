@@ -30,7 +30,7 @@ import { db, auth } from './firebase';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-import { AIModelAnalysis } from './components/AIModelAnalysis';
+import { SpaceEnvironmentPredictor } from './components/SpaceEnvironmentPredictor';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -401,7 +401,7 @@ export default function App() {
             ))}
           </div>
           
-          <AIModelAnalysis simulations={data} />
+          <SpaceEnvironmentPredictor simulations={data} />
 
           {/* Simulation List */}
           <section className="space-y-4 mt-8">
