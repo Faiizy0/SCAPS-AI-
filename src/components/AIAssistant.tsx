@@ -46,6 +46,9 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
     setIsLoading(true);
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("API key is missing. If running locally, please set GEMINI_API_KEY in your .env file.");
+      }
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       // Prepare context about current simulations

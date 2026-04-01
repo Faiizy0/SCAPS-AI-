@@ -34,6 +34,9 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
     setResult(null);
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("API key is missing. If running locally, please set GEMINI_API_KEY in your .env file.");
+      }
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       const prompt = `
@@ -53,7 +56,7 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
