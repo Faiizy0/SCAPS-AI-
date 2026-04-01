@@ -23,7 +23,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
 import { SolarCellVisualizer } from './components/SolarCellVisualizer';
-import { AIAssistant } from './components/AIAssistant';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { db, auth } from './firebase';
@@ -842,7 +841,6 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-      <AIAssistant simulations={data} />
     </div>
   );
 }
