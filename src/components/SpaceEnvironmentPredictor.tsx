@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SolarCellSimulation } from '../types';
+import { GoogleGenAI, Type } from '@google/genai';
 import { Rocket, AlertCircle, Loader2, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 
 interface SpacePredictorProps {
@@ -33,21 +34,68 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
     setResult(null);
 
     try {
-      const response = await fetch('/api/predict-space', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sim }),
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const prompt = `
+        Analyze the following solar cell simulation designed for Earth (AM1.5G) and predict its performance and viability in a Space environment (AM0 spectrum, high radiation, extreme temperature cycling, vacuum).
+        
+        Simulation Name: ${sim.name}
+        Earth Performance (AM1.5G):
+        - PCE: ${sim.results.pce}%
+        - Voc: ${sim.results.voc} V
+        - Jsc: ${sim.results.jsc} mA/cm²
+        - FF: ${sim.results.ff}%
+        
+        Layer Stack (Top to Bottom):
+        ${sim.layers.map(l => `- ${l.type}: ${l.material} (${l.thickness || 'N/A'} nm)`).join('\n')}
+        
+        Provide a realistic prediction for its space performance metrics (AM0 typically increases Jsc but extreme temps/radiation affect Voc/FF/PCE), list the pros and cons of this specific material stack in space, and give a brief analysis.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              spacePerformance: {
+                type: Type.OBJECT,
+                properties: {
+                  pce: { type: Type.NUMBER, description: "Predicted Power Conversion Efficiency in space (%)" },
+                  voc: { type: Type.NUMBER, description: "Predicted Open Circuit Voltage in space (V)" },
+                  jsc: { type: Type.NUMBER, description: "Predicted Short Circuit Current in space (mA/cm2)" },
+                  ff: { type: Type.NUMBER, description: "Predicted Fill Factor in space (%)" }
+                },
+                required: ["pce", "voc", "jsc", "ff"]
+              },
+              pros: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Advantages of this specific solar cell stack in a space environment"
+              },
+              cons: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Disadvantages or vulnerabilities of this specific solar cell stack in a space environment"
+              },
+              analysis: {
+                type: Type.STRING,
+                description: "A brief paragraph explaining the reasoning behind the predictions."
+              }
+            },
+            required: ["spacePerformance", "pros", "cons", "analysis"]
+          }
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate prediction');
+      if (response.text) {
+        const parsed = JSON.parse(response.text);
+        setResult(parsed);
+      } else {
+        throw new Error("No response from AI");
       }
-
-      const parsed = await response.json();
-      setResult(parsed);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to generate prediction");

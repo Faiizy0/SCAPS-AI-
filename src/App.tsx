@@ -804,50 +804,166 @@ export default function App() {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="glass-card p-6 space-y-4">
-                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
-                        <Layers size={16} className="text-blue-500" />
-                        Layer Details
-                      </h3>
-                      <div className="space-y-3">
-                        {viewingSim.layers.map((layer, idx) => (
-                          <div key={layer.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-slate-500 dark:text-ink uppercase">{layer.type}</span>
-                              <span className="text-sm font-bold dark:text-ink">{layer.material}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {layer.thickness !== undefined && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 dark:text-ink block">Thickness</span>
-                                  <span className="text-xs font-mono dark:text-ink">{layer.thickness} nm</span>
-                                </div>
-                              )}
-                              {layer.bandgap !== undefined && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 dark:text-ink block">Bandgap</span>
-                                  <span className="text-xs font-mono dark:text-ink">{layer.bandgap} eV</span>
-                                </div>
-                              )}
-                              {layer.metalWorkFunction !== undefined && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 dark:text-ink block">Work Function</span>
-                                  <span className="text-xs font-mono dark:text-ink">{layer.metalWorkFunction} eV</span>
-                                </div>
-                              )}
+                    <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
+                      <Layers size={16} className="text-blue-500" />
+                      Layer Details
+                    </h3>
+                    <div className="space-y-4">
+                      {viewingSim.layers.map((layer, idx) => (
+                        <div key={layer.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-ink">{idx + 1}</span>
+                              <span className="font-bold text-sm dark:text-ink">{layer.material}</span>
+                              <span className={cn(
+                                "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
+                                layer.type === 'Absorber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 
+                                layer.type === 'ETL' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                layer.type === 'HTL' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-ink'
+                              )}>
+                                {layer.type}
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                            {layer.thickness !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Thickness</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.thickness} nm</span>
+                              </div>
+                            )}
+                            {layer.bandgap !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Bandgap</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.bandgap} eV</span>
+                              </div>
+                            )}
+                            {layer.electronAffinity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Affinity (χ)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronAffinity} eV</span>
+                              </div>
+                            )}
+                            {layer.dielectricConstant !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Dielectric (ε_r)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.dielectricConstant}</span>
+                              </div>
+                            )}
+                            {layer.cbEffectiveDos !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">CB DOS (N_c)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.cbEffectiveDos)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.vbEffectiveDos !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">VB DOS (N_v)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.vbEffectiveDos)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.electronMobility !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">μ_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronMobility} cm²/Vs</span>
+                              </div>
+                            )}
+                            {layer.holeMobility !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">μ_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.holeMobility} cm²/Vs</span>
+                              </div>
+                            )}
+                            {layer.donorDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Donor (N_d)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.donorDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.acceptorDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Acceptor (N_a)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.acceptorDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.defectDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Defect (N_t)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.defectDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.metalWorkFunction !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Work Function</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.metalWorkFunction} eV</span>
+                              </div>
+                            )}
+                            {layer.electronRecVelocity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">S_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.electronRecVelocity)} cm/s</span>
+                              </div>
+                            )}
+                            {layer.holeRecVelocity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">S_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.holeRecVelocity)} cm/s</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Interface Defect if exists */}
+                          {idx < viewingSim.layers.length - 1 && viewingSim.interfaceDefects[idx] && 
+                           viewingSim.layers[idx].type !== 'Left Contact' && viewingSim.layers[idx].type !== 'Right Contact' &&
+                           viewingSim.layers[idx+1].type !== 'Left Contact' && viewingSim.layers[idx+1].type !== 'Right Contact' && (
+                            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/10 border-l-2 border-amber-400 rounded-lg text-[10px]">
+                              <p className="font-bold text-amber-700 dark:text-ink mb-2 flex items-center gap-1 uppercase tracking-wider">
+                                <Zap size={10} /> Interface Defect (Layer {idx+1} / {idx+2})
+                              </p>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Type</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].type}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Density</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].totalDensity)} cm⁻²</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Distribution</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].distribution}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Energy Ref</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].energyReference} eV</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">σ_e</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionElectron)} cm²</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">σ_h</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionHole)} cm²</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
+                <button onClick={() => setViewingSim(null)} className="btn-primary px-8">Close Details</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
       <AIAssistant simulations={data} />
     </div>
   );
