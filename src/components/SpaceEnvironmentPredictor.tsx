@@ -34,11 +34,11 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
     setResult(null);
 
     try {
-      let apiKey = '';
-      if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-        apiKey = process.env.GEMINI_API_KEY;
-      } else {
-        apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      try {
+        apiKey = apiKey || process.env.GEMINI_API_KEY || '';
+      } catch (e) {
+        // process is not defined locally
       }
 
       if (!apiKey) {
