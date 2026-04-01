@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 import { SolarCellSimulation } from '../types';
 
@@ -45,6 +46,8 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
     setIsLoading(true);
 
     try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
       // Prepare context about current simulations
       let context = 'Context: The user is working on solar cell simulations using SCAPS-1D.\n';
       if (simulations.length > 0) {
@@ -59,34 +62,16 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
 
       const prompt = `${context}\n\nUser query: ${userMessage}`;
 
-      // Convert messages to history format expected by backend
-      const history = messages
-        .filter(m => m.id !== 'welcome') // Skip the welcome message
-        .map(m => ({
-          role: m.role,
-          text: m.content
-        }));
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: prompt,
-          history: history
-        }),
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          systemInstruction: 'You are an expert in solar cell physics, photovoltaics, and the SCAPS-1D simulation software. Provide helpful, accurate, and concise answers to help the user design better solar cells. If they ask about their simulations, refer to the provided context. Format your responses using Markdown for readability.',
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get response');
-      }
-
-      const data = await response.json();
-
-      if (data.text) {
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: data.text }]);
+      if (response.text) {
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: response.text }]);
       }
     } catch (error) {
       console.error('Error generating AI response:', error);
@@ -119,7 +104,7 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 w-96 h-[600px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col z-50 overflow-hidden"
+            className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-96 h-[500px] sm:h-[600px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col z-50 overflow-hidden"
           >
             {/* Header */}
             <div className="p-4 bg-blue-600 text-white flex items-center justify-between">
