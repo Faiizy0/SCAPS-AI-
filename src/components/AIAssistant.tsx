@@ -46,7 +46,18 @@ export function AIAssistant({ simulations }: AIAssistantProps) {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      let apiKey = '';
+      if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+        apiKey = process.env.GEMINI_API_KEY;
+      } else {
+        apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      }
+
+      if (!apiKey) {
+        throw new Error("API key is missing. If running locally, please set VITE_GEMINI_API_KEY in your .env file.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       // Prepare context about current simulations
       let context = 'Context: The user is working on solar cell simulations using SCAPS-1D.\n';

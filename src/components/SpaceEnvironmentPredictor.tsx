@@ -34,7 +34,18 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
     setResult(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      let apiKey = '';
+      if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+        apiKey = process.env.GEMINI_API_KEY;
+      } else {
+        apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      }
+
+      if (!apiKey) {
+        throw new Error("API key is missing. If running locally, please set VITE_GEMINI_API_KEY in your .env file.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const prompt = `
         Analyze the following solar cell simulation designed for Earth (AM1.5G) and predict its performance and viability in a Space environment (AM0 spectrum, high radiation, extreme temperature cycling, vacuum).
