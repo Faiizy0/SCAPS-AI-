@@ -120,9 +120,9 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <select 
-          className="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm md:text-base text-gray-900 dark:text-ink focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+          className="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-gray-900 dark:text-ink focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
           value={selectedSimId}
           onChange={(e) => {
             setSelectedSimId(e.target.value);
@@ -130,15 +130,15 @@ export function SpaceEnvironmentPredictor({ simulations }: SpacePredictorProps) 
             setError(null);
           }}
         >
-          <option value="">Select a simulation...</option>
+          <option value="">Select a simulation to analyze...</option>
           {simulations.map(sim => (
-            <option key={sim.id} value={sim.id}>{sim.name} ({sim.results.pce.toFixed(1)}%)</option>
+            <option key={sim.id} value={sim.id}>{sim.name} (Earth PCE: {sim.results.pce.toFixed(1)}%)</option>
           ))}
         </select>
         <button
           onClick={handlePredict}
           disabled={!selectedSimId || loading}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center justify-center sm:min-w-[160px] shadow-sm text-sm md:text-base"
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center justify-center min-w-[160px] shadow-sm"
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Analyze for Space'}
         </button>

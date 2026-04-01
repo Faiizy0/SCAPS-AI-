@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
 import { SolarCellVisualizer } from './components/SolarCellVisualizer';
+import { AIAssistant } from './components/AIAssistant';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { db, auth } from './firebase';
@@ -348,19 +349,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 transition-colors duration-200">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white">
-              <FlaskConical size={20} className="md:hidden" />
-              <FlaskConical size={24} className="hidden md:block" />
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <FlaskConical size={24} />
             </div>
-            <div className="min-w-0">
-              <h1 className="font-bold text-sm md:text-lg leading-tight dark:text-ink truncate">Perovskite AI Research</h1>
-              <p className="text-[10px] text-slate-500 dark:text-ink font-mono tracking-wider truncate">SCAPS Simulation - Vi</p>
+            <div>
+              <h1 className="font-bold text-lg leading-tight dark:text-ink">Perovskite AI Research</h1>
+              <p className="text-xs text-slate-500 dark:text-ink font-mono tracking-wider">SCAPS Simulation data - Author: Vi</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => {
                 setEditingSimId(null);
@@ -370,11 +370,10 @@ export default function App() {
                 setResults({ voc: 0, jsc: 0, ff: 0, pce: 0 });
                 setShowForm(true);
               }}
-              className="btn-primary flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm"
+              className="btn-primary flex items-center gap-2"
             >
-              <Plus size={16} />
-              <span className="hidden sm:inline">New Simulation</span>
-              <span className="sm:hidden">New</span>
+              <Plus size={18} />
+              <span>New Simulation</span>
             </button>
           </div>
         </div>
@@ -433,56 +432,50 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     className="glass-card"
                   >
-                    <div className="p-4 md:p-6 flex flex-col md:flex-row gap-6 md:gap-8">
+                    <div className="p-6 flex flex-col md:flex-row gap-8">
                       <div className="w-full md:w-56 flex-shrink-0 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
                         <SolarCellVisualizer layers={sim.layers} />
                       </div>
-                      <div className="flex-1 space-y-4 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-lg dark:text-ink truncate">{sim.name}</h3>
-                            <p className="text-[10px] text-slate-400 font-mono">{new Date(sim.timestamp).toLocaleDateString()}</p>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-4">
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-lg dark:text-ink">{sim.name}</h3>
+                          <div className="flex items-center gap-4">
                             <div className="flex flex-col items-end">
-                              <span className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase tracking-tighter">PCE (%)</span>
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-ink">PCE (%)</span>
                               <span className="text-xl font-black text-blue-600 dark:text-blue-400">{sim.results.pce.toFixed(2)}%</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => setViewingSim(sim)}
-                                className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
-                                title="View Details"
-                              >
-                                <Eye size={18} />
-                              </button>
-                              <button 
-                                onClick={() => handleEditSim(sim)}
-                                className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
-                                title="Edit Simulation"
-                              >
-                                <Pencil size={18} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteSim(sim.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                                title="Delete"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
+                            <button 
+                              onClick={() => setViewingSim(sim)}
+                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-ink dark:hover:text-blue-400 transition-colors"
+                              title="View Details"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleEditSim(sim)}
+                              className="p-2 text-slate-300 hover:text-blue-500 dark:text-ink dark:hover:text-blue-400 transition-colors"
+                              title="Edit Simulation"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteSim(sim.id)}
+                              className="p-2 text-slate-300 hover:text-red-500 dark:text-ink dark:hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
                           </div>
                         </div>
 
                         {/* Layer Stack Visualization */}
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold text-slate-400 dark:text-ink mb-1 uppercase tracking-widest">layer stack</span>
-                          <div className="flex h-10 md:h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-ink mb-1">layer stack</span>
+                          <div className="flex h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                             {sim.layers.map((layer, idx) => (
                               <React.Fragment key={layer.id}>
                                 <div 
                                   className={cn(
-                                    "flex-1 flex items-center justify-center text-[8px] md:text-[10px] font-bold text-white transition-all hover:flex-[2] cursor-help border-r border-white/20 last:border-0 truncate px-0.5",
+                                    "flex-1 flex items-center justify-center text-[10px] font-bold text-white transition-all hover:flex-[1.5] cursor-help border-r border-white/20 last:border-0 truncate px-0.5",
                                     layer.type === 'Absorber' ? 'bg-amber-600' : 
                                     layer.type === 'ETL' ? 'bg-blue-500' :
                                     layer.type === 'HTL' ? 'bg-emerald-500' :
@@ -511,18 +504,18 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 pt-2">
-                            <div className="flex sm:flex-col justify-between sm:justify-start items-center sm:items-start p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase tracking-tighter">Voc (V)</label>
-                              <p className="font-mono font-bold text-sm md:text-base dark:text-ink">{sim.results.voc.toFixed(3)} V</p>
+                        <div className="grid grid-cols-3 gap-4 pt-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Voc (V)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.voc.toFixed(3)} V</p>
                             </div>
-                            <div className="flex sm:flex-col justify-between sm:justify-start items-center sm:items-start p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase tracking-tighter">Jsc (mA/cm²)</label>
-                              <p className="font-mono font-bold text-sm md:text-base dark:text-ink">{sim.results.jsc.toFixed(2)}</p>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Jsc (mA/cm²)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.jsc.toFixed(2)} mA/cm²</p>
                             </div>
-                            <div className="flex sm:flex-col justify-between sm:justify-start items-center sm:items-start p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase tracking-tighter">FF (%)</label>
-                              <p className="font-mono font-bold text-sm md:text-base dark:text-ink">{sim.results.ff.toFixed(2)}%</p>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 dark:text-ink">FF (%)</label>
+                              <p className="font-mono font-bold dark:text-ink">{sim.results.ff.toFixed(2)}%</p>
                             </div>
                         </div>
                       </div>
@@ -549,19 +542,19 @@ export default function App() {
       {/* Multi-Layer Form Modal */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full h-full sm:h-auto sm:max-w-5xl bg-white dark:bg-slate-800 sm:rounded-2xl shadow-2xl flex flex-col sm:max-h-[90vh]">
-              <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
-                <h2 className="text-lg md:text-xl font-bold dark:text-ink truncate">{editingSimId ? 'Edit Simulation' : 'New Simulation'}</h2>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h2 className="text-xl font-bold dark:text-ink">{editingSimId ? 'Edit Simulation' : 'New thin - Solar cell simulation'}</h2>
                 <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
-                  <Trash2 size={20} className="text-slate-400 rotate-45" />
+                  <Trash2 size={20} className="text-slate-400" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
                 {/* Live Preview */}
-                <div className="glass-card p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center">
+                <div className="glass-card p-6 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Live Stack Preview</label>
                   <div className="w-full max-w-md">
                     <SolarCellVisualizer layers={layers} />
@@ -570,10 +563,10 @@ export default function App() {
 
                 {/* Basic Info */}
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 dark:text-ink uppercase tracking-wider">simulation name</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-ink">simulation name</label>
                   <input 
                     type="text" 
-                    className="input-field text-base md:text-lg font-bold" 
+                    className="input-field text-lg font-bold" 
                     value={simName} 
                     onChange={e => setSimName(e.target.value)} 
                   />
@@ -582,14 +575,14 @@ export default function App() {
                 {/* Layer Editor */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-500 dark:text-ink uppercase tracking-wider">layer stack</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-ink">layer stack (top to bottom)</label>
                     <button onClick={() => handleAddLayer()} className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
                       <Plus size={14} /> add layer
                     </button>
                   </div>
                   
-                  <div className="space-y-6">
-                    <div className="flex justify-center -mb-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-center -mb-2">
                       <button 
                         onClick={() => handleAddLayer(0)} 
                         className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors border border-blue-200 dark:border-blue-800 shadow-sm z-10"
@@ -600,53 +593,53 @@ export default function App() {
                     </div>
                     {layers.map((layer, idx) => (
                       <React.Fragment key={layer.id}>
-                        <div className="p-4 md:p-6 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 space-y-4 relative">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-500 dark:text-ink">
+                        <div className="p-6 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 space-y-4 relative">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 dark:text-ink">
                                 {idx + 1}
                               </div>
                               <select 
-                                className="input-field py-1 text-sm font-bold w-full sm:w-48"
+                                className="input-field py-1 text-sm font-bold w-48"
                                 value={layer.type}
                                 onChange={e => handleUpdateLayerType(layer.id, e.target.value as LayerType)}
                               >
                                 {LAYER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                               </select>
                               <input 
-                                className="input-field py-1 text-sm font-bold w-full sm:w-48"
+                                className="input-field py-1 text-sm font-bold w-48"
                                 placeholder="Material Name"
                                 value={layer.material}
                                 onChange={e => handleUpdateLayer(layer.id, { material: e.target.value })}
                               />
                             </div>
-                            <button onClick={() => handleRemoveLayer(layer.id)} className="self-end sm:self-auto p-2 text-slate-300 hover:text-red-500 dark:text-ink dark:hover:text-red-400">
+                            <button onClick={() => handleRemoveLayer(layer.id)} className="p-2 text-slate-300 hover:text-red-500 dark:text-ink dark:hover:text-red-400">
                               <Trash2 size={18} />
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             { (layer.type !== 'Left Contact' && layer.type !== 'Right Contact') && (
                               <ScientificInput label="thickness (nm)" value={layer.thickness || 0} onChange={val => handleUpdateLayer(layer.id, { thickness: val })} />
                             )}
                             { (layer.type === 'Left Contact' || layer.type === 'Right Contact') ? (
                               <>
                                 <ScientificInput label="metal work function (eV)" value={layer.metalWorkFunction || 0} onChange={val => handleUpdateLayer(layer.id, { metalWorkFunction: val })} />
-                                <ScientificInput label="e- rec. velocity (cm/s)" value={layer.electronRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { electronRecVelocity: val })} />
-                                <ScientificInput label="h+ rec. velocity (cm/s)" value={layer.holeRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { holeRecVelocity: val })} />
+                                <ScientificInput label="e- rec. velocity (s_e, cm/s)" value={layer.electronRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { electronRecVelocity: val })} />
+                                <ScientificInput label="h+ rec. velocity (s_h, cm/s)" value={layer.holeRecVelocity || 0} onChange={val => handleUpdateLayer(layer.id, { holeRecVelocity: val })} />
                               </>
                             ) : (
                               <>
                                 <ScientificInput label="bandgap (eV)" value={layer.bandgap || 0} onChange={val => handleUpdateLayer(layer.id, { bandgap: val })} />
                                 <ScientificInput label="affinity (χ, eV)" value={layer.electronAffinity || 0} onChange={val => handleUpdateLayer(layer.id, { electronAffinity: val })} />
                                 <ScientificInput label="dielectric (ε_r)" value={layer.dielectricConstant || 0} onChange={val => handleUpdateLayer(layer.id, { dielectricConstant: val })} />
-                                <ScientificInput label="cb dos (cm⁻³)" value={layer.cbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { cbEffectiveDos: val })} />
-                                <ScientificInput label="vb dos (cm⁻³)" value={layer.vbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { vbEffectiveDos: val })} />
-                                <ScientificInput label="e- mobility (cm²/Vs)" value={layer.electronMobility || 0} onChange={val => handleUpdateLayer(layer.id, { electronMobility: val })} />
-                                <ScientificInput label="h+ mobility (cm²/Vs)" value={layer.holeMobility || 0} onChange={val => handleUpdateLayer(layer.id, { holeMobility: val })} />
-                                <ScientificInput label="donor (cm⁻³)" value={layer.donorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { donorDensity: val })} />
-                                <ScientificInput label="acceptor (cm⁻³)" value={layer.acceptorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { acceptorDensity: val })} />
-                                <ScientificInput label="defect (cm⁻³)" value={layer.defectDensity || 0} onChange={val => handleUpdateLayer(layer.id, { defectDensity: val })} />
+                                <ScientificInput label="cb dos (n_c, cm⁻³)" value={layer.cbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { cbEffectiveDos: val })} />
+                                <ScientificInput label="vb dos (n_v, cm⁻³)" value={layer.vbEffectiveDos || 0} onChange={val => handleUpdateLayer(layer.id, { vbEffectiveDos: val })} />
+                                <ScientificInput label="electron mobility (cm²/Vs)" value={layer.electronMobility || 0} onChange={val => handleUpdateLayer(layer.id, { electronMobility: val })} />
+                                <ScientificInput label="hole mobility (cm²/Vs)" value={layer.holeMobility || 0} onChange={val => handleUpdateLayer(layer.id, { holeMobility: val })} />
+                                <ScientificInput label="donor (n_d, cm⁻³)" value={layer.donorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { donorDensity: val })} />
+                                <ScientificInput label="acceptor (n_a, cm⁻³)" value={layer.acceptorDensity || 0} onChange={val => handleUpdateLayer(layer.id, { acceptorDensity: val })} />
+                                <ScientificInput label="defect (n_t, cm⁻³)" value={layer.defectDensity || 0} onChange={val => handleUpdateLayer(layer.id, { defectDensity: val })} />
                               </>
                             )}
                           </div>
@@ -656,14 +649,14 @@ export default function App() {
                         {idx < layers.length - 1 && interfaceDefects[idx] && 
                          layers[idx].type !== 'Left Contact' && layers[idx].type !== 'Right Contact' &&
                          layers[idx+1].type !== 'Left Contact' && layers[idx+1].type !== 'Right Contact' && (
-                          <div className="p-4 border-l-4 border-amber-400 bg-amber-50/30 dark:bg-amber-900/10 rounded-r-xl space-y-3 ml-4 md:ml-8 relative">
-                            <div className="absolute -left-[22px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-amber-400 border-2 border-white dark:border-slate-800 hidden md:block" />
+                          <div className="p-4 border-l-4 border-amber-400 bg-amber-50/30 dark:bg-amber-900/10 rounded-r-xl space-y-3 ml-8 relative">
+                            <div className="absolute -left-[22px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-amber-400 border-2 border-white dark:border-slate-800" />
                             <div className="flex items-center gap-2">
                               <Zap size={14} className="text-amber-500" />
-                              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider">Interface Defect (L{idx+1}/L{idx+2})</span>
+                              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider">Interface Defect (Layer {idx+1} / {idx+2})</span>
                             </div>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                               <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-slate-400 dark:text-ink">defect type</label>
                                 <select 
@@ -698,10 +691,10 @@ export default function App() {
                           </div>
                         )}
 
-                        <div className="flex justify-center -my-3">
+                        <div className="flex justify-center -my-2">
                           <button 
                             onClick={() => handleAddLayer(idx + 1)} 
-                            className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors border border-blue-200 dark:border-blue-800 shadow-sm z-10"
+                            className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm z-10"
                             title={`Add layer after ${layer.type}`}
                           >
                             <Plus size={16} />
@@ -714,7 +707,7 @@ export default function App() {
 
                 {/* Results Editor */}
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 dark:text-ink uppercase tracking-wider">simulation results</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-ink">simulation results (scaps output)</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 dark:text-ink">Voc (V)</label>
@@ -736,9 +729,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-4 md:p-6 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-white dark:bg-slate-800">
-                <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="btn-secondary flex-1 py-3">Cancel</button>
-                <button onClick={handleAddSimulation} className="btn-primary flex-1 py-3">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+                <button onClick={() => { setShowForm(false); setEditingSimId(null); }} className="btn-secondary flex-1">Cancel</button>
+                <button onClick={handleAddSimulation} className="btn-primary flex-1">
                   {editingSimId ? 'Update Simulation' : 'Save Simulation'}
                 </button>
               </div>
@@ -762,85 +755,216 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.95 }} 
-              className="relative w-full h-full sm:h-auto sm:max-w-4xl bg-white dark:bg-slate-900 sm:rounded-2xl shadow-2xl flex flex-col sm:max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800"
+              className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800"
             >
-              <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
-                <div className="min-w-0">
-                  <h2 className="text-lg md:text-xl font-bold dark:text-ink truncate">{viewingSim.name}</h2>
-                  <p className="text-[10px] text-slate-500 dark:text-ink font-mono truncate">ID: {viewingSim.id}</p>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                <div>
+                  <h2 className="text-xl font-bold dark:text-ink">{viewingSim.name}</h2>
+                  <p className="text-xs text-slate-500 dark:text-ink font-mono">Simulation ID: {viewingSim.id}</p>
                 </div>
-                <button onClick={() => setViewingSim(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors flex-shrink-0">
+                <button onClick={() => setViewingSim(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                   <Trash2 size={20} className="text-slate-400 rotate-45" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
-                    <div className="glass-card p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center">
+                    <div className="glass-card p-6 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Stack Visualization</label>
-                      <div className="w-full max-w-sm">
+                      <div className="w-full">
                         <SolarCellVisualizer layers={viewingSim.layers} />
                       </div>
                     </div>
 
-                    <div className="glass-card p-4 md:p-6 space-y-4">
-                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink uppercase tracking-wider">
+                    <div className="glass-card p-6 space-y-4">
+                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
                         <Zap size={16} className="text-amber-500" />
                         Performance Metrics
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                           <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Voc</p>
-                          <p className="text-base md:text-lg font-bold dark:text-ink">{viewingSim.results.voc.toFixed(3)} V</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.voc.toFixed(3)} V</p>
                         </div>
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                           <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Jsc</p>
-                          <p className="text-base md:text-lg font-bold dark:text-ink">{viewingSim.results.jsc.toFixed(2)} mA/cm²</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.jsc.toFixed(2)} mA/cm²</p>
                         </div>
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                           <p className="text-[10px] font-bold text-slate-400 dark:text-ink uppercase">Fill Factor</p>
-                          <p className="text-base md:text-lg font-bold dark:text-ink">{viewingSim.results.ff.toFixed(2)}%</p>
+                          <p className="text-lg font-bold dark:text-ink">{viewingSim.results.ff.toFixed(2)}%</p>
                         </div>
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
                           <p className="text-[10px] font-bold text-blue-400 uppercase">Efficiency (PCE)</p>
-                          <p className="text-lg md:text-xl font-black text-blue-600 dark:text-blue-400">{viewingSim.results.pce.toFixed(2)}%</p>
+                          <p className="text-xl font-black text-blue-600 dark:text-blue-400">{viewingSim.results.pce.toFixed(2)}%</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    <div className="glass-card p-4 md:p-6 space-y-4">
-                      <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink uppercase tracking-wider">
-                        <Layers size={16} className="text-blue-500" />
-                        Layer Details
-                      </h3>
-                      <div className="space-y-3">
-                        {viewingSim.layers.map((layer, idx) => (
-                          <div key={layer.id} className="p-3 border border-slate-100 dark:border-slate-800 rounded-lg bg-slate-50/30 dark:bg-slate-900/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase">Layer {idx + 1}</span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded-full dark:text-ink">{layer.type}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold flex items-center gap-2 dark:text-ink">
+                      <Layers size={16} className="text-blue-500" />
+                      Layer Details
+                    </h3>
+                    <div className="space-y-4">
+                      {viewingSim.layers.map((layer, idx) => (
+                        <div key={layer.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-ink">{idx + 1}</span>
                               <span className="font-bold text-sm dark:text-ink">{layer.material}</span>
-                              <span className="text-xs font-mono text-slate-500 dark:text-ink">{layer.thickness ? `${layer.thickness} nm` : 'Contact'}</span>
+                              <span className={cn(
+                                "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
+                                layer.type === 'Absorber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 
+                                layer.type === 'ETL' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                layer.type === 'HTL' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-ink'
+                              )}>
+                                {layer.type}
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                            {layer.thickness !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Thickness</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.thickness} nm</span>
+                              </div>
+                            )}
+                            {layer.bandgap !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Bandgap</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.bandgap} eV</span>
+                              </div>
+                            )}
+                            {layer.electronAffinity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Affinity (χ)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronAffinity} eV</span>
+                              </div>
+                            )}
+                            {layer.dielectricConstant !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Dielectric (ε_r)</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.dielectricConstant}</span>
+                              </div>
+                            )}
+                            {layer.cbEffectiveDos !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">CB DOS (N_c)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.cbEffectiveDos)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.vbEffectiveDos !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">VB DOS (N_v)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.vbEffectiveDos)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.electronMobility !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">μ_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.electronMobility} cm²/Vs</span>
+                              </div>
+                            )}
+                            {layer.holeMobility !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">μ_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.holeMobility} cm²/Vs</span>
+                              </div>
+                            )}
+                            {layer.donorDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Donor (N_d)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.donorDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.acceptorDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Acceptor (N_a)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.acceptorDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.defectDensity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Defect (N_t)</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.defectDensity)} cm⁻³</span>
+                              </div>
+                            )}
+                            {layer.metalWorkFunction !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">Work Function</span>
+                                <span className="font-mono font-bold dark:text-ink">{layer.metalWorkFunction} eV</span>
+                              </div>
+                            )}
+                            {layer.electronRecVelocity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">S_e</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.electronRecVelocity)} cm/s</span>
+                              </div>
+                            )}
+                            {layer.holeRecVelocity !== undefined && (
+                              <div className="flex justify-between border-b border-slate-100 dark:border-slate-700/50 pb-1">
+                                <span className="text-slate-400 dark:text-ink">S_h</span>
+                                <span className="font-mono font-bold dark:text-ink">{formatScientific(layer.holeRecVelocity)} cm/s</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Interface Defect if exists */}
+                          {idx < viewingSim.layers.length - 1 && viewingSim.interfaceDefects[idx] && 
+                           viewingSim.layers[idx].type !== 'Left Contact' && viewingSim.layers[idx].type !== 'Right Contact' &&
+                           viewingSim.layers[idx+1].type !== 'Left Contact' && viewingSim.layers[idx+1].type !== 'Right Contact' && (
+                            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/10 border-l-2 border-amber-400 rounded-lg text-[10px]">
+                              <p className="font-bold text-amber-700 dark:text-ink mb-2 flex items-center gap-1 uppercase tracking-wider">
+                                <Zap size={10} /> Interface Defect (Layer {idx+1} / {idx+2})
+                              </p>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Type</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].type}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Density</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].totalDensity)} cm⁻²</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Distribution</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].distribution}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">Energy Ref</span>
+                                  <span className="font-bold dark:text-ink">{viewingSim.interfaceDefects[idx].energyReference} eV</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">σ_e</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionElectron)} cm²</span>
+                                </div>
+                                <div className="flex justify-between border-b border-amber-200/50 dark:border-amber-800/50 pb-0.5">
+                                  <span className="text-amber-600/70 dark:text-amber-500/70">σ_h</span>
+                                  <span className="font-bold dark:text-ink">{formatScientific(viewingSim.interfaceDefects[idx].captureCrossSectionHole)} cm²</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0">
-                <button onClick={() => setViewingSim(null)} className="btn-primary w-full py-3">Close Details</button>
+
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
+                <button onClick={() => setViewingSim(null)} className="btn-primary px-8">Close Details</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+      <AIAssistant simulations={data} />
     </div>
   );
 }
