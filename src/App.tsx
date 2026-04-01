@@ -18,7 +18,8 @@ import {
   Settings2,
   Search,
   Eye,
-  Pencil
+  Pencil,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SolarCellSimulation, Layer, LayerType, InterfaceDefect, DefectType, EnergeticDistribution } from './types';
@@ -26,9 +27,50 @@ import { SolarCellVisualizer } from './components/SolarCellVisualizer';
 import { AIAssistant } from './components/AIAssistant';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { db, auth } from './firebase';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocFromServer } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+          <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+            <div className="flex items-center gap-3 text-red-600 mb-4">
+              <AlertCircle size={24} />
+              <h2 className="text-xl font-bold">Something went wrong</h2>
+            </div>
+            <p className="text-slate-600 mb-6">
+              The application encountered an error. This might be due to a connection issue or missing permissions.
+            </p>
+            <div className="bg-slate-50 p-4 rounded-lg mb-6 overflow-auto max-h-40">
+              <pre className="text-xs text-slate-500 font-mono">
+                {typeof this.state.error === 'object' ? JSON.stringify(this.state.error, null, 2) : String(this.state.error)}
+              </pre>
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full btn-primary"
+            >
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 import { SpaceEnvironmentPredictor } from './components/SpaceEnvironmentPredictor';
 
@@ -168,6 +210,17 @@ export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    };
+    testConnection();
+
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
@@ -182,13 +235,16 @@ export default function App() {
   useEffect(() => {
     if (!userId) return;
 
-    const q = query(collection(db, 'simulations'));
+    const path = 'simulations';
+    const q = query(collection(db, path));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const simulations: SolarCellSimulation[] = [];
       snapshot.forEach((doc) => {
         simulations.push({ id: doc.id, ...doc.data() } as SolarCellSimulation);
       });
       setData(simulations);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, path);
     });
 
     return () => unsubscribe();
@@ -308,10 +364,15 @@ export default function App() {
       userId: userId
     };
     
-    if (editingSimId) {
-      await updateDoc(doc(db, 'simulations', editingSimId), simData);
-    } else {
-      await addDoc(collection(db, 'simulations'), simData);
+    const path = 'simulations';
+    try {
+      if (editingSimId) {
+        await updateDoc(doc(db, path, editingSimId), simData);
+      } else {
+        await addDoc(collection(db, path), simData);
+      }
+    } catch (error) {
+      handleFirestoreError(error, editingSimId ? OperationType.UPDATE : OperationType.CREATE, path);
     }
     
     setShowForm(false);
@@ -333,7 +394,12 @@ export default function App() {
   };
 
   const handleDeleteSim = async (id: string) => {
-    await deleteDoc(doc(db, 'simulations', id));
+    const path = 'simulations';
+    try {
+      await deleteDoc(doc(db, path, id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
   };
 
   const filteredData = useMemo(() => {
@@ -347,7 +413,8 @@ export default function App() {
   }, [data, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 transition-colors duration-200">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 transition-colors duration-200">
       {/* Header */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -965,6 +1032,7 @@ export default function App() {
         )}
       </AnimatePresence>
       <AIAssistant simulations={data} />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
